@@ -1,0 +1,6 @@
+[submodule "obsidian-typings"]
+	path = obsidian-typings
+	url = git@github.com:d7sd6u/obsidian-typings.git
+[submodule "obsidian-reusables"]
+	path = obsidian-reusables
+	url = git@github.com:d7sd6u/obsidian-reusables.git

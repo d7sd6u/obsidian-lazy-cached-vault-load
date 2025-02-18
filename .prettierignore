@@ -1,0 +1,6 @@
+obsidian-typings
+node_modules
+.direnv
+dist
+pnpm-lock.yaml
+flake.lock
