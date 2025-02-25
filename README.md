@@ -115,11 +115,11 @@ There is a button to clear the cache in the plugin's settings page. In an unlike
 
 ## Future features / TODO
 
-There should be a setting to turn on the progressive loading during the app startup. Initially, this plugin was intended to be used without cache and the user could view how new and new files are added to the app's interface. As loading cache is CPU bound progressive loading does not make sense, but during an initial population of the cache that might help eliminate annoying wait times.
+There should be a setting to turn on the progressive loading during the app startup. Initially, this plugin was intended to be used without cache and the user could view how new and new files are added to the app's interface. As loading cache is CPU bound progressive loading does not make sense at that stage, but during an initial population of the cache that might help eliminate annoying wait times.
 
-Speaking of progressive vault loading, there should be an options to turn cache _off_. Perhaps, having non-existent files in search and file-explorer for 10 to 20 seconds is annoying for someone. This a low hanging fruit though, so there is no reason not to implement that.
+Speaking of progressive vault loading, there should be an option to turn cache _off_. Perhaps, having non-existent files in search and file-explorer for 10 to 20 seconds is annoying for someone. This a low hanging fruit though, so there is no reason not to implement that.
 
-There is a word "lazy" in the title for a reason. While there is no "lazyness" in the vault loading, except the defferal of vault traversing, in the future opening (or even seeing) folders and vaults should trigger loading/reconcilation of these paths. That would increase reliability of the search and even open a possibility of full lazyness - only loading opened paths and deferring everything else with external tools to update search/backlinks/Dataview® cache.
+There is a word "lazy" in the title for a reason. While there is no "lazyness" in the vault loading right now, except the defferal of vault traversing, in the future opening (or even seeing) folders and vaults should trigger loading/reconcilation of these paths. That would increase reliability of the search and even open the possibility of full lazyness - only loading opened paths and deferring everything else with external tools to update search/backlinks/Dataview® cache.
 
 ## Contributing
 
