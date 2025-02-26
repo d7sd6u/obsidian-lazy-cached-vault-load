@@ -33,10 +33,7 @@ export class FSCache {
 					void this.clearAll().then(() => {
 						resolve(true);
 					});
-				} else
-					void this.getTree().then((t) => {
-						resolve(Object.keys(t.children).length === 0);
-					});
+				} else resolve(false);
 			};
 
 			request.onerror = () => {

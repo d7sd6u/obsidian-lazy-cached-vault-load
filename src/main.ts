@@ -178,8 +178,10 @@ export default class Main extends PluginWithSettings({}) {
 
 		const fsCache = new FSCache(adapter.basePath);
 		this.fsCache = fsCache;
-		const isEmpty = await fsCache.init();
+		const wasInitialised = await fsCache.init();
 		const tree = await fsCache.getTree();
+		const wasEmpty =
+			wasInitialised || Object.keys(tree.children).length === 0;
 
 		const otherHandlers = this.app.vault._;
 		this.app.vault._ = {};
@@ -196,7 +198,7 @@ export default class Main extends PluginWithSettings({}) {
 		);
 		const updateMetadataCache = initialize.bind(this.app.metadataCache);
 
-		if (isEmpty) {
+		if (wasEmpty) {
 			await reconcilePromise;
 			void updateMetadataCache();
 		} else {
