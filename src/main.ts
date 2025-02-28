@@ -158,11 +158,11 @@ export default class Main extends PluginWithSettings({}) {
 				}
 			}
 		}
+		if (this.app.vault.adapter instanceof FileSystemAdapter) {
+			void this.app.vault.adapter.startWatchPath(node.path);
+		}
 		if ("size" in node) {
 			this.app.vault.onChange("file-created", node.path, undefined, node);
-			if (this.app.vault.adapter instanceof FileSystemAdapter) {
-				void this.app.vault.adapter.startWatchPath(node.path);
-			}
 			const file = this.app.vault.fileMap[node.path];
 
 			if (file instanceof TFile)
