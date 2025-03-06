@@ -96,11 +96,56 @@ Second, ftags. Basically, ftag is a hybrid of a tag and a folder. You may call i
 Why they are useful? It is easier to get that by following an example:
 You store one note per concept. You have "Paris", "Eiffel Tower", "Attractions", "France" and "Capitals". With folders you can start sorting everything like that: Capitals -> Paris -> Eiffel Tower. So far so good. But why not Attractions -> Eiffel Tower, why not France -> Paris -> Eiffel Tower? Because you can not have a file in two folders at once, so you have to choose either one or another. This is not good, your only choice is to lose valuable information (that Eiffel Tower is an attraction). Other "solutions" include duplicating folders (create Attractions folder for each city) which make searching harder and essentially lose information just in a more peculiar way.
 
-Now lets try to use tags. We could go like this: #Attractions, #Paris, #France -> Eiffel Tower. Have you spotted the problem? Now we have redundancy! This is also bad, as it is obvious that something in #Paris is also in #France, and we have to either add both by hand (and risk hesitation and/or human error) or lose information. And no, _nested tags_ are just duplicated tags in disguise. And see what problem we would have with them: #France/Paris -> Eiffel Tower or #Capitals/Paris -> Eiffel Tower? If only we could give #Paris several tags...
+```mermaid
+graph TD
+    Paris["Paris/"] --> Eiffel_Tower["Eiffel_Tower"]
+    Capitals["Capitals/"] --> Paris
+    Attractions["Attractions"] -.-x Eiffel_Tower
+    France["France"] -.-x Paris
+
+    linkStyle 2 stroke:#D50000
+    linkStyle 3 stroke:#D50000,fill:none
+```
+
+Now lets try to use tags. We could go like this: #Attractions, #Paris, #France -> Eiffel Tower. Have you spotted the problem? Now we have redundancy! This is also bad, as it is obvious that something in #Paris is also in #France, and we have to either add both by hand (and risk hesitation and/or human error) or lose information. 
+
+```mermaid
+graph TD
+    Paris[#Paris] --> Eiffel_Tower
+    Attractions[#Attractions] --> Eiffel_Tower
+    Capitals["#Capitals (forgot to link!)"]
+    Eiffel_Tower
+    France[#France] --> Eiffel_Tower
+    France -.-x Paris
+  
+    linkStyle 3 stroke:#D50000
+```
+
+And no, _nested tags_ are just duplicated tags in disguise. And see what problem we would have with them: #France/Paris -> Eiffel Tower or #Capitals/Paris -> Eiffel Tower? If only we could give #Paris several tags...
+
+```mermaid
+graph TD
+    Paris["Paris (#France/Paris)"] --> Eiffel_Tower
+    Attractions[#Attractions] --> Eiffel_Tower
+    Capitals["Capitals (#Capitals/Paris)"]
+    Eiffel_Tower
+    France["France (#France/Paris)"] --> Paris
+    Capitals -.-x Paris
+  
+    linkStyle 3 stroke:#D50000
+```
 
 That's where ftags save the day! Now you can have arbitrary DAG as your tag-system. #Attractions, #Paris -> Eiffel Tower; #France, #Capitals -> #Paris
 
-I model them with ordinary folders (supercharged with folder notes) and `symlinks` frontmatter property that is filled with wikilinks to all child notes/files.
+```mermaid
+graph TD
+  Capitals --> Paris
+  France --> Paris
+  Paris --> Eiffel_Tower
+  Attractions --> Eiffel_Tower
+```
+
+I model them with ordinary folders (supercharged with folder notes) and `symlinks` frontmatter property that is filled with wikilinks to all child notes/files. This also means that every note is a tag and every tag is a note.
 Previously I modeled it with symlinks (which is neat and tidy), but, though a part of POSIX standard, a lot of software behaves poorly with symlinks. And it is totally not transportable to other OSes, even Android.
 
 Third, "annexed". You _really_ should read about `git-annex`, but tldr: store metadata about your files in Git, while their content may be stored and managed separately. It is like `git-lfs` but much-much more powerful and allows you to store large files only on selected devices/remotes rather than forcing you to store everything everywhere! So, for example, you can be sure you have at least two copies of contents of each file, at least one copy on an offsite cold backup disk and only `*.mp3` files content should be stored on your mobile phone. This way you have at least two backups of every file, an offsite cold backup of every file and your phone's storage is not overwhelmed with your `*.raw` image files collection.
