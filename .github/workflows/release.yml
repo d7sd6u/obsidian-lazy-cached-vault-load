@@ -32,7 +32,7 @@ jobs:
               run: pnpm run build
 
             - name: Copy manifest and styles to dist
-              run: cp src/manifest.json dist/
+              run: cp manifest.json dist/
 
             - name: Release
               uses: softprops/action-gh-release@v1
