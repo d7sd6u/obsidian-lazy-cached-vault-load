@@ -107,8 +107,6 @@ graph TD
 
 Now let's try using tags. We could go like this: #Attractions, #Paris, #France -> Eiffel Tower. Have you spotted the problem? Now we have redundancy! This is also bad, as it is obvious that something in #Paris is also in #France, and we have to either add both by hand (and risk hesitation and/or human error) or lose information.
 
-And no, nested tags are just duplicated tags in disguise. And see what problem we would have with them: #France/Paris -> Eiffel Tower or #Capitals/Paris -> Eiffel Tower? If only we could give #Paris several tags...
-
 ```mermaid
 graph TD
     Paris[#Paris] --> Eiffel_Tower
@@ -121,7 +119,29 @@ graph TD
     linkStyle 3 stroke:#D50000
 ```
 
+And no, nested tags are just duplicated tags in disguise. And see what problem we would have with them: #France/Paris -> Eiffel Tower or #Capitals/Paris -> Eiffel Tower? If only we could give #Paris several tags...
+
+```mermaid
+graph TD
+    Paris["Paris (#France/Paris)"] --> Eiffel_Tower
+    Attractions[#Attractions] --> Eiffel_Tower
+    Capitals["Capitals (#Capitals/Paris)"]
+    Eiffel_Tower
+    France["France (#France/Paris)"] --> Paris
+    Capitals -.-x Paris
+
+    linkStyle 3 stroke:#D50000
+```
+
 That's where ftags save the day! Now you can have an arbitrary DAG as your tag system. #Attractions, #Paris -> Eiffel Tower; #France, #Capitals -> #Paris
+
+```mermaid
+graph TD
+  Capitals --> Paris
+  France --> Paris
+  Paris --> Eiffel_Tower
+  Attractions --> Eiffel_Tower
+```
 
 I model them with ordinary folders (supercharged with folder notes) and `.symlinks` frontmatter property that is filled with wikilinks to all child notes/files. This also means that every note is a tag and every tag is a note.
 Previously, I modeled it with symlinks (which is neat and tidy), but, though a part of the POSIX standard, a lot of software behaves poorly with symlinks. And it is totally not transportable to other OSes, even Android.
