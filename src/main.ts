@@ -2,6 +2,7 @@
 import {
 	CapacitorAdapter,
 	FileSystemAdapter,
+	Reference,
 	TAbstractFile,
 	TFile,
 	TFolder,
@@ -12,6 +13,7 @@ import { CacheTreeFolder, FSCache } from "./FSCache";
 import PluginWithSettings from "../obsidian-reusables/src/PluginWithSettings";
 import { getParentPath } from "../obsidian-reusables/src/indexFiles";
 import { VirtualFSPluginSettingsTab } from "./settings";
+import { CustomArrayDictImpl } from "obsidian-typings/src/obsidian/implementations/Classes/CustomArrayDictImpl";
 
 type ReadDir = (p: string) => Promise<
 	{
@@ -198,12 +200,71 @@ export default class Main extends PluginWithSettings({}) {
 		);
 		const updateMetadataCache = initialize.bind(this.app.metadataCache);
 
+		const updateFile = (file: TFile) => {
+			for (const [target] of file.links ?? []) {
+				target.backlinks?.delete(file);
+			}
+			const cache = this.app.metadataCache.getFileCache(file);
+			if (cache) {
+				file.links ??= new Map();
+				for (const link of [
+					...(cache.links ?? []),
+					...(cache.frontmatterLinks ?? []),
+				]) {
+					const target = this.app.metadataCache.getFirstLinkpathDest(
+						link.link,
+						file.path,
+					);
+					if (!target) continue;
+					target.backlinks ??= new Map<TFile, Reference[]>();
+					const refs = target.backlinks.get(file) ?? [];
+					refs.push(link);
+					target.backlinks.set(file, refs);
+
+					const outRefs = file.links.get(target) ?? [];
+					outRefs.push(link);
+					file.links.set(target, outRefs);
+				}
+			}
+		};
+		const updateBacklinks = () => {
+			for (const file of this.app.vault.getFiles()) {
+				updateFile(file);
+			}
+		};
 		if (wasEmpty) {
 			await reconcilePromise;
-			void updateMetadataCache();
+			void updateMetadataCache().then(updateBacklinks);
 		} else {
-			void reconcilePromise.then(updateMetadataCache);
+			void reconcilePromise
+				.then(updateMetadataCache)
+				.then(updateBacklinks);
 		}
+
+		this.app.metadataCache.on("resolve", (file) => {
+			updateFile(file);
+		});
+		this.app.vault.on("delete", (file) => {
+			if (file instanceof TFile)
+				for (const [target] of file.links ?? []) {
+					target.backlinks?.delete(file);
+				}
+		});
+
+		this.registerPatch(this.app.metadataCache, {
+			getBacklinksForFile() {
+				return (file) => {
+					const dict = new CustomArrayDictImpl<Reference>();
+					dict.data = new Map<string, Reference[]>(
+						[...(file.backlinks?.entries() ?? [])].map(([k, v]) => [
+							k.path,
+							v,
+						]),
+					);
+					return dict;
+				};
+			},
+		});
 
 		return fsCache;
 	}
@@ -265,6 +326,12 @@ export default class Main extends PluginWithSettings({}) {
 	}
 }
 
+declare module "obsidian" {
+	interface TFile extends TAbstractFile {
+		backlinks?: Map<TFile, Reference[]>;
+		links?: Map<TFile, Reference[]>;
+	}
+}
 type Node =
 	| {
 			type: "folder";
