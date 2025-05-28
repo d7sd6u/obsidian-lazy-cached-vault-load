@@ -147,10 +147,9 @@ export default class Main extends PluginWithSettings({}) {
 				if (existing instanceof TFile)
 					this.app.vault.onChange("file-removed", node.path);
 				else if (existing instanceof TFolder) {
+					const newByName = new Set(node.children.map((v) => v.name));
 					for (const child of existing.children) {
-						const wasDeleted = !node.children.find(
-							(c) => c.name === child.name,
-						);
+						const wasDeleted = !newByName.has(child.name);
 						const isVirtual =
 							child instanceof TFile && child.extension === "dir";
 						if (wasDeleted && !isVirtual)
@@ -197,6 +196,7 @@ export default class Main extends PluginWithSettings({}) {
 			"/",
 			this.reconcileNode,
 			readdir,
+			wasEmpty ? undefined : 10,
 		);
 		const updateMetadataCache = async () => {
 			console.time("metadata");
@@ -279,12 +279,13 @@ export default class Main extends PluginWithSettings({}) {
 				.then(bindFileWatchers);
 		} else {
 			console.time("updating cache");
+			void updateBacklinks();
 			void reconcilePromise
 				.then(() => {
 					console.timeEnd("updating cache");
 				})
 				.then(updateMetadataCache)
-				.then(updateBacklinks)
+				// .then(updateBacklinks)
 				.then(bindFileWatchers);
 		}
 
@@ -349,10 +350,13 @@ export default class Main extends PluginWithSettings({}) {
 		p: string,
 		visitor: (node: Node) => void,
 		readdir: ReadDir,
+		timeout?: number,
 	) {
 		const base = this.app.vault.adapter.basePath;
 		const fullPath = p === "/" ? base : base + "/" + p;
 		const children = await readdir(fullPath);
+		if (timeout !== undefined)
+			await new Promise((r) => setTimeout(r, timeout));
 
 		visitor({ type: "folder", path: p, children });
 		for (const c of children) {

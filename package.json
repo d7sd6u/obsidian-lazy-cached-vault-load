@@ -7,6 +7,7 @@
 		"dev": "node esbuild.config.mjs",
 		"build": "node esbuild.config.mjs production",
 		"typecheck": "tsc -noEmit -skipLibCheck",
+		"upload-mobile": "adb push dist/* /storage/emulated/0/Documents/Vault/.obsidian/plugins/lazy-cached-vault-load",
 		"version": "node version-bump.mjs && git add manifest.json versions.json",
 		"lint": "eslint src/",
 		"lint:fix": "eslint --fix src/",
