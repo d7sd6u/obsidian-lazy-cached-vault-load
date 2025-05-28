@@ -1,6 +1,6 @@
 {
 	"name": "lazy-cached-vault-load",
-	"version": "0.0.5",
+	"version": "0.0.6",
 	"description": "",
 	"main": "./src/main.ts",
 	"scripts": {
