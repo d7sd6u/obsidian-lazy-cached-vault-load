@@ -292,6 +292,9 @@ export default class Main extends PluginWithSettings({}) {
 		this.app.metadataCache.on("resolve", (file) => {
 			updateFile(file);
 		});
+		this.app.metadataCache.on("changed", (file) => {
+			updateFile(file);
+		});
 		this.app.vault.on("delete", (file) => {
 			if (file instanceof TFile)
 				for (const [target] of file.links ?? []) {
