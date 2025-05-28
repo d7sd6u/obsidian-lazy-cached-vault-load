@@ -160,9 +160,6 @@ export default class Main extends PluginWithSettings({}) {
 				}
 			}
 		}
-		if (this.app.vault.adapter instanceof FileSystemAdapter) {
-			void this.app.vault.adapter.startWatchPath(node.path);
-		}
 		if ("size" in node) {
 			this.app.vault.onChange("file-created", node.path, undefined, node);
 			const file = this.app.vault.fileMap[node.path];
@@ -180,16 +177,19 @@ export default class Main extends PluginWithSettings({}) {
 
 		const fsCache = new FSCache(adapter.basePath);
 		this.fsCache = fsCache;
+		console.time("reading cache");
 		const wasInitialised = await fsCache.init();
 		const tree = await fsCache.getTree();
+		console.timeEnd("reading cache");
 		const wasEmpty =
 			wasInitialised || Object.keys(tree.children).length === 0;
 
 		const otherHandlers = this.app.vault._;
 		this.app.vault._ = {};
 
+		console.time("applying cache");
 		this.visitCachedNodes(tree, this.reconcileNode, "/");
-
+		console.timeEnd("applying cache");
 		this.app.vault._ = otherHandlers;
 
 		this.setupListenersForCache(fsCache);
@@ -198,7 +198,11 @@ export default class Main extends PluginWithSettings({}) {
 			this.reconcileNode,
 			readdir,
 		);
-		const updateMetadataCache = initialize.bind(this.app.metadataCache);
+		const updateMetadataCache = async () => {
+			console.time("metadata");
+			await initialize.bind(this.app.metadataCache)();
+			console.timeEnd("metadata");
+		};
 
 		const updateFile = (file: TFile) => {
 			for (const [target] of file.links ?? []) {
@@ -227,18 +231,61 @@ export default class Main extends PluginWithSettings({}) {
 				}
 			}
 		};
-		const updateBacklinks = () => {
-			for (const file of this.app.vault.getFiles()) {
-				updateFile(file);
+		const updateBacklinks = async () => {
+			const notice = new Notice("Starting filling backlinks", 100000);
+			console.time("backlinks");
+			const files = this.app.vault.getFiles();
+			for (let i = 0; i < files.length; i++) {
+				const file = files[i];
+				if (file) updateFile(file);
+				if (i % 100 === 0) await new Promise((r) => setTimeout(r, 1));
 			}
+			console.timeEnd("backlinks");
+			notice.setMessage("Finished filling backlinks");
+			setTimeout(() => {
+				notice.hide();
+			}, 2000);
 		};
+		const bindFileWatchers =
+			adapter instanceof FileSystemAdapter
+				? async () => {
+						const notice = new Notice(
+							"Starting setting watches",
+							100000,
+						);
+						console.time("watches");
+						const files = Object.keys(adapter.files);
+						for (let i = 0; i < files.length; i++) {
+							const file = files[i]!;
+							await adapter.startWatchPath(file);
+							if (i % 20 === 0)
+								await new Promise((r) => setTimeout(r, 20));
+						}
+						console.timeEnd("watches");
+						notice.setMessage("Finished setting watches");
+						setTimeout(() => {
+							notice.hide();
+						}, 2000);
+					}
+				: async () => {
+						/* file watchers are not supported by the adapter */
+					};
 		if (wasEmpty) {
+			console.time("filling cache");
 			await reconcilePromise;
-			void updateMetadataCache().then(updateBacklinks);
+			console.timeEnd("filling cache");
+			void updateMetadataCache()
+				.then(updateBacklinks)
+				.then(bindFileWatchers);
 		} else {
+			console.time("updating cache");
 			void reconcilePromise
+				.then(() => {
+					console.timeEnd("updating cache");
+				})
 				.then(updateMetadataCache)
-				.then(updateBacklinks);
+				.then(updateBacklinks)
+				.then(bindFileWatchers);
 		}
 
 		this.app.metadataCache.on("resolve", (file) => {
